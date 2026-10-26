@@ -1,0 +1,21 @@
+{
+  "name": "hongbai-xibao-tool",
+  "version": "1.0.0",
+  "description": "红白喜报图片生成工具：原始聊天截图 + 风格参考图 -> AI 批量生成红白喜报海报",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "multer": "^2.0.1"
+  }
+}

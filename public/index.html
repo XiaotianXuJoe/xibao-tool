@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>红白喜报生成工具</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🎉 红白喜报生成工具</h1>
+    <p class="subtitle">上传聊天截图，一键批量生成红白喜报海报</p>
+    <nav class="nav-tabs">
+      <button id="navWork" class="nav-tab active">工作台</button>
+      <button id="navHistory" class="nav-tab">历史归档</button>
+      <button id="navSettings" class="nav-tab">设置</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div id="viewWork">
+    <!-- 第①步: 风格模板 -->
+    <section class="card">
+      <div class="card-title"><span class="step-badge">①</span> 风格模板</div>
+      <p class="hint">喜报将仿照此参考图的红白风格生成，可随时替换为新模板。</p>
+      <div id="templateDrop" class="dropzone">
+        <div class="template-row">
+          <img id="templatePreview" class="template-thumb" alt="当前风格模板" />
+          <div class="template-actions">
+            <button id="btnPickTemplate" class="btn btn-outline">替换模板</button>
+            <input type="file" id="inputTemplate" accept="image/*" hidden />
+            <div id="templateStatus" class="status-text"></div>
+          </div>
+        </div>
+        <div class="drop-hint">或将模板图片直接拖拽到此处</div>
+      </div>
+    </section>
+
+    <!-- 第②步: 上传原始截图 -->
+    <section class="card">
+      <div class="card-title"><span class="step-badge">②</span> 上传原始截图</div>
+      <p class="hint">支持多选图片或单个 zip 压缩包（zip 内图片会自动解压）。</p>
+      <div id="originalsDrop" class="dropzone">
+        <div class="upload-row">
+          <button id="btnPickOriginals" class="btn btn-outline">选择图片 / zip</button>
+          <input type="file" id="inputOriginals" multiple accept="image/*,.zip" hidden />
+          <button id="btnUpload" class="btn btn-primary" disabled>开始上传</button>
+        </div>
+        <div class="drop-hint">或将图片 / zip 直接拖拽到此处（可多选）</div>
+      </div>
+      <div id="uploadStatus" class="status-text"></div>
+      <div id="batchBar" class="batch-bar hidden">
+        <span class="batch-bar-label">当前批次：</span>
+        <input id="batchNameInput" type="text" maxlength="50" placeholder="给这组图片起个名字" />
+        <button id="btnSaveBatchName" class="btn btn-mini">保存名称</button>
+        <span id="batchNameStatus" class="status-text"></span>
+      </div>
+      <div id="originalsList" class="thumb-grid"></div>
+    </section>
+
+    <!-- 第③步: 生成 -->
+    <section class="card">
+      <div class="card-title"><span class="step-badge">③</span> 生成喜报</div>
+      <p class="hint">每张原图默认生成 4 张，单张约 30~100 秒，期间可做其他操作。</p>
+      <div class="generate-row">
+        <label class="inline-label">每张数量
+          <input type="number" id="inputCount" min="1" max="10" value="4" />
+        </label>
+        <button id="btnGenerate" class="btn btn-primary btn-lg" disabled>开始生成</button>
+      </div>
+
+      <details class="advanced">
+        <summary>高级设置（提示词）</summary>
+        <textarea id="promptInput" rows="4"></textarea>
+      </details>
+
+      <div id="progressBox" class="progress-box hidden">
+        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        <div id="progressText" class="status-text"></div>
+      </div>
+      <div id="failedList" class="failed-list"></div>
+    </section>
+
+    <!-- 结果区 -->
+    <section class="card" id="resultSection">
+      <div class="card-title">生成结果</div>
+      <div class="toolbar">
+        <button id="btnSelectAll" class="btn btn-mini">全选</button>
+        <button id="btnInvert" class="btn btn-mini">反选</button>
+        <span id="selectedCount" class="status-text">已选 0 张</span>
+        <button id="btnDownloadEach" class="btn btn-outline" disabled>逐张下载</button>
+        <button id="btnDownload" class="btn btn-primary" disabled>下载选中（zip）</button>
+      </div>
+      <div id="resultGroups"></div>
+    </section>
+    </div><!-- /viewWork -->
+
+    <!-- 历史归档视图 -->
+    <div id="viewHistory" class="hidden">
+      <section class="card">
+        <div class="card-title">历史归档
+          <button id="btnRefreshHistory" class="btn btn-mini" style="margin-left:auto;">刷新</button>
+        </div>
+        <p class="hint">过往批次都保存在服务器上，可重新打开继续生成、下载或删除图片。</p>
+        <div id="historyStatus" class="status-text"></div>
+        <div id="historyList" class="history-grid"></div>
+      </section>
+    </div>
+
+    <!-- 设置视图 -->
+    <div id="viewSettings" class="hidden">
+      <section class="card">
+        <div class="card-title">模型与接口设置</div>
+        <p class="hint">保存后立即对后续生成生效，无需重启。API Key 仅保存在服务器，界面永不回显明文。后续接入其他大模型时，同样在此修改模型 ID / 接口地址 / Key 即可。</p>
+        <div class="form-row">
+          <label for="setModel">模型 ID</label>
+          <input id="setModel" type="text" placeholder="例如 doubao-seedream-5.0-pro" />
+        </div>
+        <div class="form-row">
+          <label for="setBaseUrl">接口地址（Base URL）</label>
+          <input id="setBaseUrl" type="text" placeholder="https://ai.ctaigw.cn/v1" />
+        </div>
+        <div class="form-row">
+          <label for="setSize">输出分辨率</label>
+          <select id="setSize">
+            <option value="720p">720p（720×1280，体积最小、最快）</option>
+            <option value="1K">1K（清晰，速度较快）</option>
+            <option value="2K">2K（默认，推荐）</option>
+            <option value="4K">4K（最清晰，速度较慢）</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="setConcurrency">并发生成数量</label>
+          <input id="setConcurrency" type="number" min="1" max="20" step="1" value="6" />
+          <span class="field-hint">受模型账户并发上限约束，建议不超过 20；调大后，正在排队等待并发槽位的生成任务会立即继续</span>
+        </div>
+        <div class="form-row">
+          <label for="setApiKey">API Key</label>
+          <input id="setApiKey" type="password" autocomplete="new-password" placeholder="留空表示不修改" />
+        </div>
+        <div id="settingsStatus" class="status-text"></div>
+        <div class="settings-actions">
+          <button id="btnSaveSettings" class="btn btn-primary">保存设置</button>
+          <button id="btnTestSettings" class="btn btn-outline">测试连接</button>
+          <button id="btnResetSettings" class="btn btn-mini">恢复默认</button>
+        </div>
+        <div id="settingsTestResult" class="status-text"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 大图预览 -->
+  <div id="lightbox" class="lightbox hidden">
+    <span id="lightboxClose" class="lightbox-close">✕</span>
+    <div id="lightboxCounter" class="lightbox-counter"></div>
+    <span id="lightboxPrev" class="lightbox-nav lightbox-prev">‹</span>
+    <img id="lightboxImg" alt="大图预览" />
+    <span id="lightboxNext" class="lightbox-nav lightbox-next">›</span>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
